@@ -83,4 +83,4 @@ Not yet published. See `CHANGELOG.md`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/lukegalea/ash_operations/blob/main/LICENSE).

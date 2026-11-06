@@ -16,7 +16,8 @@ defmodule AshOperations.MixProject do
         "Declare a provider's HTTP operations on an Ash resource: one generic action per " <>
           "operation, a spec pinned at compile time, one retry table and typed errors.",
       package: package(),
-      docs: docs()
+      aliases: aliases(),
+      docs: &docs/0
     ]
   end
 
@@ -28,13 +29,39 @@ defmodule AshOperations.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib mix.exs README.md CHANGELOG.md LICENSE usage-rules.md .formatter.exs),
+      files:
+        ~w(lib documentation mix.exs README.md CHANGELOG.md LICENSE usage-rules.md .formatter.exs),
       links: %{"GitHub" => @source_url}
     ]
   end
 
   defp docs do
-    [main: "readme", extras: ["README.md", "CHANGELOG.md", "usage-rules.md"]]
+    [
+      main: "readme",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extras: [
+        {"README.md", title: "Home"},
+        "documentation/tutorials/getting-started.md",
+        {"documentation/dsls/DSL-AshOperations.md",
+         search_data: Spark.Docs.search_data_for(AshOperations)},
+        "usage-rules.md",
+        "CHANGELOG.md"
+      ],
+      groups_for_extras: [
+        Tutorials: ~r"documentation/tutorials",
+        DSLs: ~r"documentation/dsls",
+        "About AshOperations": ["usage-rules.md", "CHANGELOG.md"]
+      ]
+    ]
+  end
+
+  defp aliases do
+    [
+      docs: ["spark.cheat_sheets", "docs", "spark.replace_doc_links"],
+      "spark.formatter": "spark.formatter --extensions AshOperations",
+      "spark.cheat_sheets": "spark.cheat_sheets --extensions AshOperations"
+    ]
   end
 
   defp deps do
@@ -50,7 +77,8 @@ defmodule AshOperations.MixProject do
       {:telemetry, "~> 1.0"},
       {:bandit, "~> 1.5", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:igniter, "~> 0.8", optional: true},
+      {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false}
     ]
   end
 end
