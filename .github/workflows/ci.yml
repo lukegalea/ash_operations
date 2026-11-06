@@ -1,27 +1,64 @@
 name: CI
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   test:
+    name: Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        elixir: ["1.20.4"]
+        otp: ["27.3.4", "28"]
     env:
       MIX_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "27"
-          elixir-version: "1.18"
+          otp-version: ${{ matrix.otp }}
+          elixir-version: ${{ matrix.elixir }}
       - uses: actions/cache@v4
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
       - run: mix deps.get
+      - run: mix deps.unlock --check-unused
       - run: mix format --check-formatted
       - run: mix compile --warnings-as-errors
       - run: mix test
       - run: mix credo --strict
+      - run: mix spark.cheat_sheets --check
+      - run: MIX_ENV=dev mix docs --warnings-as-errors
+
+  dialyzer:
+    name: Dialyzer (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      MIX_ENV: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3.4"
+          elixir-version: "1.20.4"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+            priv/plts
+          key: ${{ runner.os }}-dialyzer-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-dialyzer-
+      - run: mix deps.get
+      - run: mix dialyzer
