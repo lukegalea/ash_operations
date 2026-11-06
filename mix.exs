@@ -17,7 +17,8 @@ defmodule AshOperations.MixProject do
           "operation, a spec pinned at compile time, one retry table and typed errors.",
       package: package(),
       aliases: aliases(),
-      docs: &docs/0
+      docs: &docs/0,
+      dialyzer: [plt_local_path: "priv/plts", plt_core_path: "priv/plts", plt_add_apps: [:mix]]
     ]
   end
 
@@ -78,7 +79,8 @@ defmodule AshOperations.MixProject do
       {:bandit, "~> 1.5", only: :test},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:igniter, "~> 0.8", optional: true},
-      {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 end
