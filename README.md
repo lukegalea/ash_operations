@@ -1,5 +1,8 @@
 # AshOperations
 
+[![CI](https://github.com/lukegalea/ash_operations/actions/workflows/ci.yml/badge.svg)](https://github.com/lukegalea/ash_operations/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/lukegalea/ash_operations/blob/main/LICENSE)
+
 Declare the HTTP operations of a provider's API on an Ash resource. Each operation becomes one
 generic Ash action and one code interface function, so every outbound call goes through your
 policies, your actor and your tenant like any other action.
@@ -75,11 +78,16 @@ Elixir 1.20 or later, on OTP 27 or 28.
 
 ## Installation
 
+AshOperations is not published to Hex. Pin it by git tag:
+
 ```elixir
-def deps, do: [{:ash_operations, "~> 0.1"}]
+def deps do
+  [{:ash_operations, github: "lukegalea/ash_operations", tag: "v0.1.0"}]
+end
 ```
 
-Not yet published. See `CHANGELOG.md`.
+With [Igniter](https://hexdocs.pm/igniter) in your project, `mix igniter.install ash_operations`
+adds the formatter entry and a commented provider example. See `CHANGELOG.md`.
 
 ## License
 
