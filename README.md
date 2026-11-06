@@ -69,6 +69,10 @@ end
 To format the DSL without parentheses, import it in `.formatter.exs`:
 `import_deps: [:ash_operations]`.
 
+## Requirements
+
+Elixir 1.20 or later, on OTP 27 or 28.
+
 ## Installation
 
 ```elixir
