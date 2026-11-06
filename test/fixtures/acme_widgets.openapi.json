@@ -1,0 +1,11 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Acme Widgets API (synthetic test fixture)", "version": "1.0.0"},
+  "servers": [{"url": "http://widgets.test"}],
+  "paths": {
+    "/widgets": {"get": {"operationId": "listWidgets"}, "post": {"operationId": "createWidget"}},
+    "/widgets/upload": {"post": {"operationId": "uploadWidget"}},
+    "/widgets/{id}": {"get": {"operationId": "getWidget"}, "delete": {"operationId": "deleteWidget"}},
+    "/widgets/{id}/content": {"get": {"operationId": "getWidgetContent"}}
+  }
+}
