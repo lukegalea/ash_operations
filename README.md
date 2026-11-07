@@ -20,6 +20,8 @@ What the library gives you:
 - **A disclosure gate.** Operations marked `discloses? true` ask your gate before a byte is sent.
 - **Typed errors without bodies**, and structural telemetry (no paths, queries, bodies, headers).
 - **A webhook ingress plug** that reads the raw bytes, verifies, de-duplicates and enqueues.
+- **Operator surfaces.** A delivery record macro you instantiate on your own resource (no body, no
+  headers) and an optional ash_a2ui surface over it. See the "Operator surfaces" guide.
 
 ## Example
 
@@ -71,6 +73,14 @@ end
 
 To format the DSL without parentheses, import it in `.formatter.exs`:
 `import_deps: [:ash_operations]`.
+
+## Operator surfaces
+
+`use AshOperations.Resources.Delivery` on your own resource gives you the inbound delivery record,
+idempotent on the provider's delivery id. `use AshOperations.A2ui.Deliveries, resource: ...` binds
+a table, detail and report surface to it, with an optional "Reconcile now" row action that calls an
+action you name. ash_a2ui is an optional dependency, and the rest of the package compiles without
+it. See the "Operator surfaces" guide.
 
 ## Requirements
 
