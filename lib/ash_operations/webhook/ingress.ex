@@ -84,7 +84,7 @@ defmodule AshOperations.Webhook.Ingress do
   defp read(conn, cap) do
     Plug.Conn.read_body(conn, length: cap, read_length: cap, read_timeout: 15_000)
   rescue
-    e -> if Map.get(e, :plug_status) == 408, do: {:error, :timeout}, else: {:error, :read_failed}
+    e -> if Plug.Exception.status(e) == 408, do: {:error, :timeout}, else: {:error, :read_failed}
   end
 
   defp cap(mod) do
