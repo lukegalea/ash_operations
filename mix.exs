@@ -9,6 +9,10 @@ defmodule AshOperations.MixProject do
       app: :ash_operations,
       version: @version,
       elixir: "~> 1.20",
+      # A build without the optional ash_a2ui dependency lives in its own build path and lockfile,
+      # so it never disturbs the normal one: `ASH_OPERATIONS_NO_A2UI=1 mix deps.get && mix test`.
+      build_path: if(no_a2ui?(), do: "_build_no_a2ui", else: "_build"),
+      lockfile: if(no_a2ui?(), do: "mix.no_a2ui.lock", else: "mix.lock"),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -31,7 +35,7 @@ defmodule AshOperations.MixProject do
     [
       licenses: ["MIT"],
       files:
-        ~w(lib documentation mix.exs README.md CHANGELOG.md LICENSE usage-rules.md .formatter.exs),
+        ~w(lib priv/gettext documentation mix.exs README.md CHANGELOG.md LICENSE usage-rules.md .formatter.exs),
       links: %{"GitHub" => @source_url}
     ]
   end
@@ -44,6 +48,7 @@ defmodule AshOperations.MixProject do
       extras: [
         {"README.md", title: "Home"},
         "documentation/tutorials/getting-started.md",
+        "documentation/tutorials/operator-surfaces.md",
         {"documentation/dsls/DSL-AshOperations.md",
          search_data: Spark.Docs.search_data_for(AshOperations)},
         "usage-rules.md",
@@ -65,22 +70,35 @@ defmodule AshOperations.MixProject do
     ]
   end
 
+  defp no_a2ui?, do: System.get_env("ASH_OPERATIONS_NO_A2UI") in ["1", "true"]
+
   defp deps do
-    [
-      {:ash, "~> 3.37"},
-      {:spark, "~> 2.7"},
-      {:splode, "~> 0.3"},
-      {:req, "~> 0.5"},
-      {:jason, "~> 1.4"},
-      {:decimal, "~> 2.0 or ~> 3.0"},
-      {:plug, "~> 1.16"},
-      {:plug_crypto, "~> 2.0"},
-      {:telemetry, "~> 1.0"},
-      {:bandit, "~> 1.5", only: :test},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:igniter, "~> 0.8", optional: true},
-      {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
-    ]
+    a2ui =
+      if no_a2ui?() do
+        []
+      else
+        # Optional: the operator surfaces (`AshOperations.A2ui.*`) expand to ash_a2ui surfaces in
+        # the host. 'display :timeline' needs bff7ed0 or later.
+        [{:ash_a2ui, github: "lukegalea/ash_a2ui", optional: true}]
+      end
+
+    a2ui ++
+      [
+        {:ash, "~> 3.37"},
+        {:spark, "~> 2.7"},
+        {:splode, "~> 0.3"},
+        {:req, "~> 0.5"},
+        {:jason, "~> 1.4"},
+        {:decimal, "~> 2.0 or ~> 3.0"},
+        {:plug, "~> 1.16"},
+        {:plug_crypto, "~> 2.0"},
+        {:telemetry, "~> 1.0"},
+        {:gettext, "~> 1.0"},
+        {:bandit, "~> 1.5", only: :test},
+        {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+        {:igniter, "~> 0.8", optional: true},
+        {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},
+        {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      ]
   end
 end
