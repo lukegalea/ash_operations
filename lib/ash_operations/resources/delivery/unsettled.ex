@@ -12,5 +12,6 @@ defmodule AshOperations.Resources.Delivery.Unsettled do
   def validate(_changeset, _opts, _context), do: {:error, message: "delivery is already settled"}
 
   @impl true
-  def atomic(_changeset, _opts, _context), do: :not_atomic
+  def atomic(_changeset, _opts, _context),
+    do: {:not_atomic, "reads the stored delivery state, not the changeset"}
 end
