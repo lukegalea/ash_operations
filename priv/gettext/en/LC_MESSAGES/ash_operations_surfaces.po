@@ -1,0 +1,102 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/ash_operations/surfaces/labels.ex:53
+#, elixir-autogen, elixir-format
+msgid "Deliveries"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:54
+#, elixir-autogen, elixir-format
+msgid "Deliveries per provider and verdict"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:39
+#, elixir-autogen, elixir-format
+msgid "Deliveries the providers send appear here."
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:43
+#, elixir-autogen, elixir-format
+msgid "Delivery id"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:42
+#, elixir-autogen, elixir-format
+msgid "Endpoint"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:44
+#, elixir-autogen, elixir-format
+msgid "Event type"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:47
+#, elixir-autogen, elixir-format
+msgid "Follow-up"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:49
+#, elixir-autogen, elixir-format
+msgid "Followed up"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:36
+#, elixir-autogen, elixir-format
+msgid "No deliveries"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:41
+#, elixir-autogen, elixir-format
+msgid "Provider"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:52
+#, elixir-autogen, elixir-format
+msgid "Reason"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:48
+#, elixir-autogen, elixir-format
+msgid "Received"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:50
+#, elixir-autogen, elixir-format
+msgid "Reconcile now"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:46
+#, elixir-autogen, elixir-format
+msgid "Signature"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:45
+#, elixir-autogen, elixir-format
+msgid "Subject"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:35
+#, elixir-autogen, elixir-format
+msgid "Webhook deliveries"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:51
+#, elixir-autogen, elixir-format
+msgid "Why reconcile this delivery now?"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:34
+#, elixir-autogen, elixir-format
+msgid "delivery"
+msgstr ""

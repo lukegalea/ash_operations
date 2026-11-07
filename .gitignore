@@ -4,3 +4,5 @@
 erl_crash.dump
 *.ez
 /priv/plts/
+_build_no_a2ui
+mix.no_a2ui.lock

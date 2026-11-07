@@ -19,7 +19,9 @@ spark_locals_without_parens = [
 ]
 
 [
-  import_deps: [:ash, :spark],
+  import_deps:
+    [:ash, :spark] ++
+      if(System.get_env("ASH_OPERATIONS_NO_A2UI") in ["1", "true"], do: [], else: [:ash_a2ui]),
   inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}"],
   locals_without_parens: spark_locals_without_parens,
   export: [locals_without_parens: spark_locals_without_parens]
