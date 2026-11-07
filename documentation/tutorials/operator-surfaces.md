@@ -63,6 +63,44 @@ end
 nothing to do). `awaiting_follow_up` reads the deliveries still `received`, oldest first, which is
 what a follow-up job's trigger reads.
 
+`mark_followed_up` is the one settle path, and settling twice is harmless: a delivery that is no
+longer `received` is returned as stored, with nothing changed. A host whose follow-up does work
+layers its own change on it rather than writing a second action that sets `state` itself:
+
+```elixir
+use AshOperations.Resources.Delivery,
+  subject_required?: true,
+  settle_changes: [MyApp.Ops.Changes.FollowUp]
+```
+
+The built-in changes set `state` and `followed_up_at` first; yours run after them, so a
+`before_transaction` hook that reads the provider can override `state` (for instance to
+`:ignored`). Your trigger then runs `mark_followed_up`. `subject_required?: true` makes
+`subject_id` mandatory; the default leaves it optional. `MyApp.Ops.Delivery.recorded?(provider,
+dedup_key)` answers whether a delivery is stored, for a webhook path that wants to skip a
+redelivery early (it reads with `authorize?: false`, since no actor exists yet, and returns a
+boolean).
+
+### Adopting the macro on an existing table
+
+`received_at` and `signature_verdict` are required, and the generator cannot write a database
+default for them, so adding them to a table that has rows needs `migration_defaults`. Pass the
+values as Elixir source with `~S`, then run `mix ash.codegen`:
+
+```elixir
+postgres do
+  table "ops_deliveries"
+  repo MyApp.Repo
+
+  migration_defaults received_at: ~S|fragment("(now() AT TIME ZONE 'utc')")|,
+                     signature_verdict: ~S|"valid"|
+end
+```
+
+The migration then adds `received_at` with `default: fragment("(now() AT TIME ZONE 'utc')")` and
+`signature_verdict` with `default: "valid"`; existing rows read as received now and with the
+`valid` verdict.
+
 On a data layer that cannot check identities natively (ETS, in tests) pass the domain:
 `use AshOperations.Resources.Delivery, pre_check_with: MyApp.Ops`.
 

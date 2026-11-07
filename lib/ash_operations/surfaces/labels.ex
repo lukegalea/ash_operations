@@ -30,6 +30,7 @@ defmodule AshOperations.Surfaces.Labels do
   @doc "The label for `key`."
   @spec text(key()) :: String.t()
   def text(:deliveries_title), do: dgettext(@domain, "Webhook deliveries")
+  def text(:delivery_record), do: dgettext(@domain, "delivery")
   def text(:deliveries_empty_title), do: dgettext(@domain, "No deliveries")
 
   def text(:deliveries_empty_message),

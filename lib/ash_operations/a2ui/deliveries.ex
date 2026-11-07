@@ -84,7 +84,7 @@ defmodule AshOperations.A2ui.Deliveries do
         for_resource(unquote(resource))
         surface_id unquote(surface_id)
         title unquote(title)
-        record_label "delivery"
+        record_label unquote(Labels.text(:delivery_record))
         spec_version "1.0"
 
         context :delivery do

@@ -95,3 +95,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Why reconcile this delivery now?"
 msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:34
+#, elixir-autogen, elixir-format
+msgid "delivery"
+msgstr ""

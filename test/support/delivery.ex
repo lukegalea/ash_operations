@@ -4,6 +4,7 @@ defmodule AshOperations.Test.OpsDomain do
 
   resources do
     resource AshOperations.Test.Delivery
+    resource AshOperations.Test.StrictDelivery
   end
 end
 
@@ -22,6 +23,30 @@ defmodule AshOperations.Test.Delivery do
       argument :reason, :string, allow_nil?: false
     end
   end
+end
+
+defmodule AshOperations.Test.StampSettled do
+  @moduledoc "A host change layered on mark_followed_up through :settle_changes."
+  use Ash.Resource.Change
+
+  @impl true
+  def change(changeset, _opts, _context) do
+    Ash.Changeset.before_transaction(changeset, fn changeset ->
+      Ash.Changeset.force_change_attribute(changeset, :state, :ignored)
+    end)
+  end
+end
+
+defmodule AshOperations.Test.StrictDelivery do
+  @moduledoc "The macro with a required subject and a host change layered on the settle path."
+  use Ash.Resource,
+    domain: AshOperations.Test.OpsDomain,
+    data_layer: Ash.DataLayer.Ets
+
+  use AshOperations.Resources.Delivery,
+    pre_check_with: AshOperations.Test.OpsDomain,
+    subject_required?: true,
+    settle_changes: [AshOperations.Test.StampSettled]
 end
 
 if Code.ensure_loaded?(AshA2ui.Standalone) do

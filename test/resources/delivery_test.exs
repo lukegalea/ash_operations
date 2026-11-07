@@ -118,4 +118,59 @@ defmodule AshOperations.Resources.DeliveryTest do
     attributes = Enum.map(Info.attributes(Delivery), &Atom.to_string(&1.name))
     refute Enum.any?(attributes, &String.contains?(&1, ~w(body payload header)))
   end
+
+  test "mark_followed_up on a settled delivery is a no-op returning the stored row" do
+    settled = record!() |> Ash.Changeset.for_update(:mark_followed_up, %{}) |> Ash.update!()
+
+    again =
+      settled
+      |> Ash.Changeset.for_update(:mark_followed_up, %{outcome: :ignored})
+      |> Ash.update!()
+
+    assert again.state == :followed_up
+    assert again.followed_up_at == settled.followed_up_at
+  end
+
+  test "subject_id is optional by default and required with subject_required?: true" do
+    assert Info.attribute(Delivery, :subject_id).allow_nil?
+    refute Info.attribute(AshOperations.Test.StrictDelivery, :subject_id).allow_nil?
+
+    assert_raise Ash.Error.Invalid, fn ->
+      AshOperations.Test.StrictDelivery
+      |> Ash.Changeset.for_create(:record, %{provider: "p", dedup_key: unique()})
+      |> Ash.create!()
+    end
+  end
+
+  test "settle_changes layer on mark_followed_up after the built-in settle" do
+    delivery =
+      AshOperations.Test.StrictDelivery
+      |> Ash.Changeset.for_create(:record, %{
+        provider: "p",
+        dedup_key: unique(),
+        subject_id: "s"
+      })
+      |> Ash.create!()
+
+    settled = delivery |> Ash.Changeset.for_update(:mark_followed_up, %{}) |> Ash.update!()
+    assert settled.state == :ignored
+    assert %DateTime{} = settled.followed_up_at
+
+    # settled now: the host change does not run again
+    again =
+      settled
+      |> Ash.Changeset.for_update(:mark_followed_up, %{outcome: :followed_up})
+      |> Ash.update!()
+
+    assert again.state == :ignored
+    assert again.followed_up_at == settled.followed_up_at
+  end
+
+  test "recorded?/2 reports whether the identity is stored" do
+    key = unique()
+    refute Delivery.recorded?("acme-registry", key)
+    record!(%{dedup_key: key})
+    assert Delivery.recorded?("acme-registry", key)
+    refute Delivery.recorded?("acme-docs", key)
+  end
 end
