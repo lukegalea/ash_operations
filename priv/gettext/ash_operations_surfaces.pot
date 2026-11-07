@@ -1,0 +1,97 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
+msgid ""
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:53
+#, elixir-autogen, elixir-format
+msgid "Deliveries"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:54
+#, elixir-autogen, elixir-format
+msgid "Deliveries per provider and verdict"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:39
+#, elixir-autogen, elixir-format
+msgid "Deliveries the providers send appear here."
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:43
+#, elixir-autogen, elixir-format
+msgid "Delivery id"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:42
+#, elixir-autogen, elixir-format
+msgid "Endpoint"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:44
+#, elixir-autogen, elixir-format
+msgid "Event type"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:47
+#, elixir-autogen, elixir-format
+msgid "Follow-up"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:49
+#, elixir-autogen, elixir-format
+msgid "Followed up"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:36
+#, elixir-autogen, elixir-format
+msgid "No deliveries"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:41
+#, elixir-autogen, elixir-format
+msgid "Provider"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:52
+#, elixir-autogen, elixir-format
+msgid "Reason"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:48
+#, elixir-autogen, elixir-format
+msgid "Received"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:50
+#, elixir-autogen, elixir-format
+msgid "Reconcile now"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:46
+#, elixir-autogen, elixir-format
+msgid "Signature"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:45
+#, elixir-autogen, elixir-format
+msgid "Subject"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:35
+#, elixir-autogen, elixir-format
+msgid "Webhook deliveries"
+msgstr ""
+
+#: lib/ash_operations/surfaces/labels.ex:51
+#, elixir-autogen, elixir-format
+msgid "Why reconcile this delivery now?"
+msgstr ""

@@ -40,6 +40,22 @@ jobs:
       - run: mix spark.cheat_sheets --check
       - run: MIX_ENV=dev mix docs --warnings-as-errors
 
+  without-a2ui:
+    name: Without the optional ash_a2ui
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      ASH_OPERATIONS_NO_A2UI: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27.3.4"
+          elixir-version: "1.20.4"
+      - run: mix deps.get
+      - run: mix compile --warnings-as-errors
+      - run: mix test
+
   dialyzer:
     name: Dialyzer (non-blocking)
     runs-on: ubuntu-latest
