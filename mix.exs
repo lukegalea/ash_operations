@@ -78,7 +78,7 @@ defmodule AshOperations.MixProject do
         []
       else
         # Optional: the operator surfaces (`AshOperations.A2ui.*`) expand to ash_a2ui surfaces in
-        # the host. 'display :timeline' needs bff7ed0 or later.
+        # the host.
         [{:ash_a2ui, github: "lukegalea/ash_a2ui", optional: true}]
       end
 

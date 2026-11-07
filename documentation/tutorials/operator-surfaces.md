@@ -114,8 +114,7 @@ The resource macro, the labels and the rest of the package do not reference ash_
 expanding `use AshOperations.A2ui.Deliveries` needs it, and without it that raises a
 `CompileError` naming the dependency to add. The package itself is tested both ways:
 `ASH_OPERATIONS_NO_A2UI=1 mix deps.get && ASH_OPERATIONS_NO_A2UI=1 mix test` builds in
-`_build_no_a2ui` with its own lockfile. The surface needs ash_a2ui at `bff7ed0` or later (a
-`display :timeline` table) and the package pins its lock to a newer commit.
+`_build_no_a2ui` with its own lockfile.
 
 ## Labels and translation
 
