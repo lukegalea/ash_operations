@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- The webhook ingress answers 408 when the body read times out. Bandit raises with an atom
+  `plug_status` (`:request_timeout`); the status is now resolved with `Plug.Exception.status/1`.
+- The minimum supported Elixir is now 1.20 (was 1.18).
+- First extraction: the `operations` DSL, `AshOperations.Http` transport over `Req`, the shared
+  retry table, typed errors, spec pinning, reconciliation, the disclosure gate and the webhook
+  ingress plug.
+
 ### Added
 
 - `AshOperations.Resources.Delivery`: a resource macro a host instantiates on its own base
@@ -21,8 +28,3 @@
   compiles and tests without it (`ASH_OPERATIONS_NO_A2UI=1`).
 - `AshOperations.Gettext` and `AshOperations.Surfaces.Labels`: the surface labels as an
   `ash_operations_surfaces` gettext domain, English shipped.
-
-- The minimum supported Elixir is now 1.20 (was 1.18).
-- First extraction: the `operations` DSL, `AshOperations.Http` transport over `Req`, the shared
-  retry table, typed errors, spec pinning, reconciliation, the disclosure gate and the webhook
-  ingress plug.
