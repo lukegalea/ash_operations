@@ -67,7 +67,7 @@ defmodule AshOperations.WebhookTest do
     assert post("test", "[1]").status == 400
   end
 
-  test "a body read that raises a 408 HTTP error is 408 and still emits telemetry" do
+  test "a body read that raises Bandit's request_timeout error is 408 and still emits telemetry" do
     id = {__MODULE__, make_ref()}
     parent = self()
 
@@ -86,6 +86,27 @@ defmodule AshOperations.WebhookTest do
 
     assert Ingress.call(conn, @opts).status == 408
     assert_received {:event, %{status: 408, outcome: :timeout}}
+  end
+
+  test "a body read that raises Bandit's bad_request error is 400, not 408 and still emits telemetry" do
+    id = {__MODULE__, make_ref()}
+    parent = self()
+
+    :telemetry.attach(
+      id,
+      [:test, :webhook, :received],
+      fn _, _, meta, _ -> send(parent, {:event, meta}) end,
+      nil
+    )
+
+    on_exit(fn -> :telemetry.detach(id) end)
+
+    conn = %{conn(:post, "/test", "x") | path_params: %{"provider" => "test"}}
+    {_, state} = conn.adapter
+    conn = %{conn | adapter: {AshOperations.Test.DroppingAdapter, state}}
+
+    assert Ingress.call(conn, @opts).status == 400
+    assert_received {:event, %{status: 400, outcome: :bad_request}}
   end
 
   test "a dedup key error is 400" do
