@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The installer's documentation helper moved out of the `Mix.Tasks` namespace, so generated task
+  listings no longer show it as a task.
 - The webhook ingress answers 408 when the body read times out. Bandit raises with an atom
   `plug_status` (`:request_timeout`); the status is now resolved with `Plug.Exception.status/1`.
 - The minimum supported Elixir is now 1.20 (was 1.18).
