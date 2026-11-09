@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.AshOperations.Install.Docs do
+defmodule AshOperations.InstallDocs do
   @moduledoc false
 
   def short_doc do
@@ -29,9 +29,9 @@ end
 
 if Code.ensure_loaded?(Igniter) do
   defmodule Mix.Tasks.AshOperations.Install do
-    @shortdoc "#{__MODULE__.Docs.short_doc()}"
+    @shortdoc "#{AshOperations.InstallDocs.short_doc()}"
 
-    @moduledoc __MODULE__.Docs.long_doc()
+    @moduledoc AshOperations.InstallDocs.long_doc()
     use Igniter.Mix.Task
 
     alias Igniter.Project.Formatter
@@ -43,7 +43,7 @@ if Code.ensure_loaded?(Igniter) do
         group: :ash,
         adds_deps: [],
         installs: [],
-        example: __MODULE__.Docs.example(),
+        example: AshOperations.InstallDocs.example(),
         only: nil,
         positional: [],
         composes: [],
