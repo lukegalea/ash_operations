@@ -5,7 +5,8 @@ defmodule AshOperations.Run do
   1. Build the request from the declaration and the cast arguments.
   2. For `discloses? true`, ask the section's disclosure gate, with the action's
      context. A refusal sends nothing.
-  3. Hand the request to the section's transport.
+  3. Hand the request to the section's transport, with the call in `meta.call`:
+     the action's actor and tenant, and the values of its `in: :context` params.
 
   Returns `{:ok, body}` — the provider's decoded body — or
   `{:error, %AshOperations.Error{}}`.
@@ -13,13 +14,15 @@ defmodule AshOperations.Run do
 
   use Ash.Resource.Actions.Implementation
 
-  alias AshOperations.{Error, Info, Request}
+  alias AshOperations.{Error, Info, Param, Request}
 
   @impl true
   def run(input, opts, context) do
     resource = input.resource
     operation = Info.operation(resource, Keyword.fetch!(opts, :operation))
-    meta = meta(resource, operation)
+
+    meta =
+      resource |> meta(operation) |> Map.put(:call, call(operation, input.arguments, context))
 
     with {:ok, request} <- build(operation, input.arguments, meta),
          :ok <- gate(resource, operation, input.arguments, context, meta),
@@ -50,6 +53,19 @@ defmodule AshOperations.Run do
       :ok -> :ok
       {:error, code} when is_binary(code) -> {:error, error(:disclosure_refused, code, meta)}
     end
+  end
+
+  # What the transport may decide from, beside the request: who is calling, for which
+  # tenant, and the arguments declared to stay off the wire.
+  defp call(operation, arguments, context) do
+    %{
+      actor: Map.get(context, :actor),
+      tenant: Map.get(context, :tenant),
+      context_params:
+        for %Param{in: :context, name: name} <- operation.params, into: %{} do
+          {name, Map.get(arguments, name)}
+        end
+    }
   end
 
   defp meta(resource, operation) do

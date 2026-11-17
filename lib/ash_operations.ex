@@ -47,6 +47,10 @@ defmodule AshOperations do
       `disclosure_gate` before any byte leaves; a refusal sends nothing.
     * **Effects are declared.** `effect` (`:read` or `:write`, defaulted from the
       method) is carried into telemetry.
+    * **The transport sees the call.** `meta.call` carries the action's actor, its
+      tenant and the values of its `in: :context` params, so a transport can choose a
+      per-call destination or credential (`c:AshOperations.Http.config/1`) without
+      any of it becoming a request field.
 
   The core names no host module: the host supplies the transport, the gate and
   the resource's policies. That keeps it promotable to a package.
@@ -65,13 +69,15 @@ defmodule AshOperations do
       type: [type: :any, required: true, doc: "The Ash type of the argument."],
       as: [type: :string, doc: "The provider's own name for the field. Defaults to `name`."],
       in: [
-        type: {:one_of, [:query, :path, :body, :part]},
+        type: {:one_of, [:query, :path, :body, :part, :context]},
         default: :query,
         doc: """
         Where the value goes: a query parameter, a `{placeholder}` path segment,
         a top-level JSON body field, or a multipart part. A `:part` value is a
         string, or `%{content: binary, filename: String.t(), content_type: String.t()}`
-        for a file.
+        for a file. A `:context` value never goes on the wire: the transport reads
+        it from `meta.call.context_params` (to pick a per-call base URL or
+        credential, say).
         """
       ],
       allow_nil?: [type: :boolean, default: true, doc: "Whether the argument may be omitted."],

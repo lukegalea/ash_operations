@@ -13,6 +13,20 @@
 
 ### Added
 
+- The transport sees the call: `meta.call` holds the action's `actor`, `tenant` and the values of
+  its `in: :context` params. A new param location, `in: :context`, is an action argument that is
+  never put on the wire.
+- `AshOperations.Http`: an optional `config/1`, called with the operation's metadata instead of
+  `config/0` when a transport defines it, so the base URL and credential can depend on the call. It
+  may refuse with `{:error, reason}` or `{:error, {reason, code}}`. A transport defining neither
+  `config/0` nor `config/1` no longer compiles.
+- `AshOperations.Http`: an optional `sign/3` callback receives the exact body bytes sent and
+  returns extra headers. A JSON body is now encoded by the transport rather than by Req's `json:`
+  option, with the same encoder and the same default `content-type` and `accept` headers, so the
+  bytes on the wire are unchanged.
+- `AshOperations.Http`: a `redirect` config key (default `true`, Req's behaviour). `false` leaves
+  a 3xx unfollowed, failing with reason `:bad_request` and its status.
+
 - `AshOperations.Resources.Delivery`: a resource macro a host instantiates on its own base
   resource, giving the inbound webhook delivery record (provider, endpoint, delivery id, event
   type, subject, signature verdict, follow-up state, timestamps; no body, no headers) with

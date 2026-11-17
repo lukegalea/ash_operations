@@ -4,5 +4,6 @@ defmodule AshOperations.Test.Domain do
 
   resources do
     resource AshOperations.Test.Widgets
+    resource AshOperations.Test.Hooks
   end
 end
