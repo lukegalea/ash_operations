@@ -21,9 +21,38 @@ defmodule AshOperations.Http do
 
     * `:base_url` (required) and `:auth` (`{:bearer, token}` or nil);
     * `:headers` — extra headers on every request (e.g. an API version pin);
+    * `:redirect` — whether a 3xx is followed (default `true`). A transport that
+      sends to an address it vetted itself sets `false`: a followed redirect would
+      reach an address nobody vetted, with the same body. An unfollowed 3xx fails
+      with reason `:bad_request` and its `status`;
     * `:req_options` — merged last; tests pass `plug: {Req.Test, Module}`;
     * `:max_attempts` (3), `:max_delay_ms` (10_000), `:base_backoff_ms` (500),
       `:sleep` (a 1-arity fun; default `Process.sleep/1`).
+
+  ## Per-call configuration
+
+  A transport whose destination or credential depends on the call implements
+  `config/1` instead of `config/0`. It receives the operation's metadata, whose
+  `call` holds the action's actor, tenant and `in: :context` params
+  (`AshOperations.Transport`):
+
+      @impl true
+      def config(%{call: %{tenant: tenant, context_params: %{endpoint_id: id}}}) do
+        with {:ok, endpoint} <- MyApp.Webhooks.endpoint(tenant, id) do
+          {:ok, %{base_url: endpoint.url, redirect: false, secret: endpoint.secret}}
+        end
+      end
+
+  When both are defined, `config/1` is used. The map may carry keys of the
+  transport's own (`:secret` above); only `sign/3` reads them.
+
+  ## Signing
+
+  A transport that signs requests implements `sign/3`. It receives the exact body
+  bytes that will be sent (`""` without a body), the metadata and the config, and
+  returns extra headers. A JSON body is encoded here, once, so the signature covers
+  the bytes on the wire. A multipart body is encoded by `Req`, so `sign/3` receives
+  `nil` for one. It is called once per call, and its headers go on every attempt.
 
   This module holds the only `Req` call on the operations path. Retrying
   follows `AshOperations.Retry`. JSON is decoded with
@@ -42,11 +71,13 @@ defmodule AshOperations.Http do
           required(:base_url) => String.t(),
           optional(:auth) => {:bearer, String.t()} | nil,
           optional(:headers) => [{String.t(), String.t()}],
+          optional(:redirect) => boolean(),
           optional(:req_options) => keyword(),
           optional(:max_attempts) => pos_integer(),
           optional(:max_delay_ms) => non_neg_integer(),
           optional(:base_backoff_ms) => non_neg_integer(),
-          optional(:sleep) => (non_neg_integer() -> any())
+          optional(:sleep) => (non_neg_integer() -> any()),
+          optional(atom()) => term()
         }
 
   @type fields :: %{
@@ -57,6 +88,24 @@ defmodule AshOperations.Http do
 
   @doc "The provider's runtime configuration, or `{:error, :not_configured}`."
   @callback config() :: {:ok, config()} | {:error, :not_configured}
+
+  @doc """
+  The configuration for one call, from its metadata (`meta.call` holds the actor,
+  the tenant and the `in: :context` params). Used instead of `config/0` when
+  defined. An error fails the call before anything is sent: `{:error, reason}`, or
+  `{:error, {reason, code}}` to set the error's `provider_code` to a short code (never
+  data). `reason` must be one of `AshOperations.Error`'s reasons.
+  """
+  @callback config(Transport.meta()) ::
+              {:ok, config()} | {:error, Error.reason() | {Error.reason(), String.t()}}
+
+  @doc """
+  Extra headers that sign one request: the exact body bytes (`""` without a body,
+  `nil` for multipart), the metadata and the config.
+  """
+  @callback sign(body :: binary() | nil, Transport.meta(), config()) :: [{String.t(), String.t()}]
+
+  @optional_callbacks config: 0, config: 1, sign: 3
 
   @doc """
   Classify a non-2xx response. Reads codes and statuses only; must never copy a
@@ -77,6 +126,19 @@ defmodule AshOperations.Http do
       def classify(response), do: AshOperations.Http.by_status(response)
 
       defoverridable classify: 1
+
+      @before_compile AshOperations.Http
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    unless Module.defines?(env.module, {:config, 0}) or Module.defines?(env.module, {:config, 1}) do
+      raise CompileError,
+        file: env.file,
+        line: env.line,
+        description:
+          "#{inspect(env.module)} uses AshOperations.Http but defines neither config/0 nor config/1"
     end
   end
 
@@ -88,14 +150,17 @@ defmodule AshOperations.Http do
 
     :telemetry.span(meta.telemetry_prefix, labels, fn ->
       {result, attempts} =
-        case transport.config() do
+        case config(transport, meta) do
           {:ok, config} ->
             config
-            |> build_req(request, meta)
+            |> build_req(request, meta, transport)
             |> attempt(%{transport: transport, config: config, meta: meta}, 1)
 
-          {:error, :not_configured} ->
-            {{:error, error(%{reason: :not_configured}, nil, meta)}, 0}
+          {:error, {reason, code}} when is_atom(reason) and is_binary(code) ->
+            {{:error, error(%{reason: reason, provider_code: code}, nil, meta)}, 0}
+
+          {:error, reason} when is_atom(reason) ->
+            {{:error, error(%{reason: reason}, nil, meta)}, 0}
         end
 
       {result, Map.merge(labels, stop_metadata(result, attempts))}
@@ -104,18 +169,28 @@ defmodule AshOperations.Http do
 
   # --- request -----------------------------------------------------------------
 
-  defp build_req(config, request, meta) do
+  defp config(transport, meta) do
+    if function_exported?(transport, :config, 1),
+      do: transport.config(meta),
+      else: transport.config()
+  end
+
+  defp build_req(config, request, meta, transport) do
+    {body_opts, bytes, body_headers} = body(request.body)
+    headers = with_defaults(Map.get(config, :headers, []), body_headers)
+
     [
       base_url: Map.fetch!(config, :base_url),
       url: request.path,
       method: request.method,
       params: request.query,
-      headers: Map.get(config, :headers, []),
+      headers: headers ++ signature(transport, bytes, meta, config),
       retry: false,
+      redirect: Map.get(config, :redirect, true),
       receive_timeout: meta.timeout
     ]
     |> put_auth(Map.get(config, :auth))
-    |> put_body(request.body)
+    |> Keyword.merge(body_opts)
     |> put_decoding(meta.response)
     |> Req.new()
     |> Req.merge(Map.get(config, :req_options, []))
@@ -124,9 +199,29 @@ defmodule AshOperations.Http do
   defp put_auth(opts, {:bearer, token}), do: Keyword.put(opts, :auth, {:bearer, token})
   defp put_auth(opts, nil), do: opts
 
-  defp put_body(opts, nil), do: opts
-  defp put_body(opts, {:json, map}), do: Keyword.put(opts, :json, map)
-  defp put_body(opts, {:multipart, parts}), do: Keyword.put(opts, :form_multipart, parts)
+  # The JSON body is encoded here rather than by Req's `json:` option, with the same
+  # encoder and the same two default headers, so the bytes a signature covers are the
+  # bytes sent.
+  defp body(nil), do: {[], "", []}
+
+  defp body({:json, map}) do
+    bytes = map |> Jason.encode_to_iodata!() |> IO.iodata_to_binary()
+    {[body: bytes], bytes, [{"content-type", "application/json"}, {"accept", "application/json"}]}
+  end
+
+  defp body({:multipart, parts}), do: {[form_multipart: parts], nil, []}
+
+  # A header the config already sets wins, as it did under Req's put_new_header.
+  defp with_defaults(headers, defaults) do
+    names = MapSet.new(headers, fn {name, _} -> String.downcase(to_string(name)) end)
+    headers ++ Enum.reject(defaults, fn {name, _} -> MapSet.member?(names, name) end)
+  end
+
+  defp signature(transport, bytes, meta, config) do
+    if function_exported?(transport, :sign, 3),
+      do: transport.sign(bytes, meta, config),
+      else: []
+  end
 
   defp put_decoding(opts, :json),
     do: Keyword.put(opts, :decoders, json: &Jason.decode(&1, floats: :decimals))

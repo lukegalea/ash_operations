@@ -8,6 +8,11 @@ defmodule AshOperations.Transport do
   telemetry are the transport's job; `AshOperations.Http`
   implements all three over `Req` and is what a provider transport normally
   `use`s.
+
+  `meta.call` describes the call itself: the action's `actor` and `tenant`, and
+  `context_params`, the values of the operation's `in: :context` params by name.
+  None of it is on the request. Treat it as input for choosing a destination or a
+  credential; never copy it into telemetry or an error.
   """
 
   alias AshOperations.Error
@@ -27,7 +32,14 @@ defmodule AshOperations.Transport do
           required(:idempotent?) => boolean(),
           required(:timeout) => pos_integer(),
           required(:response) => :json | :binary | :none,
-          required(:telemetry_prefix) => [atom()]
+          required(:telemetry_prefix) => [atom()],
+          optional(:call) => call()
+        }
+
+  @type call :: %{
+          actor: term(),
+          tenant: term(),
+          context_params: %{optional(atom()) => term()}
         }
 
   @type response :: %{status: pos_integer(), body: term(), headers: map()}

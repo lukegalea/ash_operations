@@ -101,3 +101,48 @@ end
 ```
 
 An `:ambiguous` failure means the request may have reached the provider; it is never re-sent.
+
+## 6. A destination chosen per call
+
+Some providers are not one base URL with one credential: an outbound webhook, say, goes to
+whichever URL a customer registered, signed with that customer's secret. Give the operation an
+`in: :context` param to name the record that holds them, and implement `config/1` instead of
+`config/0`. A `:context` param is cast and required like any argument, and never becomes a request
+field:
+
+```elixir
+operation :deliver, :post, "/" do
+  idempotent? true
+  response :none
+  documented_at "https://example.test/webhooks"
+  param :endpoint_id, :uuid, in: :context, allow_nil?: false
+  param :type, :string, in: :body, allow_nil?: false
+end
+```
+
+`config/1` receives the operation's metadata; `meta.call` holds the action's `actor`, its `tenant`
+and the `context_params`. Return `redirect: false` when you send to an address you vetted
+yourself, so a 3xx cannot take the body somewhere else. To sign, implement `sign/3`: it receives the
+exact bytes that will be sent and returns headers.
+
+```elixir
+defmodule MyApp.Webhooks.Transport do
+  use AshOperations.Http
+
+  @impl true
+  def config(%{call: %{tenant: tenant, context_params: %{endpoint_id: id}}}) do
+    case MyApp.Webhooks.endpoint(tenant, id) do
+      {:ok, endpoint} -> {:ok, %{base_url: endpoint.url, redirect: false, secret: endpoint.secret}}
+      :error -> {:error, {:disclosure_refused, "unknown_endpoint"}}
+    end
+  end
+
+  @impl true
+  def sign(body, _meta, %{secret: secret}) do
+    [{"x-signature", :crypto.mac(:hmac, :sha256, secret, body) |> Base.encode64()}]
+  end
+end
+```
+
+`{:error, {reason, code}}` fails the call before anything is sent, with `code` as the error's
+`provider_code`.

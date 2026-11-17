@@ -6,6 +6,9 @@ defmodule AshOperations.Param do
 
   `name` is the Ash argument (snake_case); `as` is the provider's own name for
   it (`"nameContains"`), defaulting to `name`.
+
+  An `in: :context` param is an argument and nothing else: no request field is
+  built from it. The transport reads it from `meta.call.context_params`.
   """
 
   defstruct [
@@ -22,7 +25,7 @@ defmodule AshOperations.Param do
     __spark_metadata__: nil
   ]
 
-  @type location :: :query | :path | :body | :part
+  @type location :: :query | :path | :body | :part | :context
 
   @type t :: %__MODULE__{
           name: atom(),
