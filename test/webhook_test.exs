@@ -6,11 +6,15 @@ defmodule AshOperations.WebhookTest do
   import ExUnit.CaptureLog
   import Plug.Test
 
-  alias AshOperations.Test.{DefaultCapProvider, WebhookProvider}
+  alias AshOperations.Test.{ArrayProvider, DefaultCapProvider, WebhookProvider}
   alias AshOperations.Webhook.{Ingress, Signature}
 
   @opts Ingress.init(
-          providers: %{"test" => WebhookProvider, "plain" => DefaultCapProvider},
+          providers: %{
+            "test" => WebhookProvider,
+            "plain" => DefaultCapProvider,
+            "array" => ArrayProvider
+          },
           telemetry_prefix: [:test, :webhook]
         )
 
@@ -65,6 +69,16 @@ defmodule AshOperations.WebhookTest do
   test "bad JSON and a non-object are 400" do
     assert post("test", "{nope").status == 400
     assert post("test", "[1]").status == 400
+  end
+
+  test "a provider whose payload shape is :array gets the list and refuses an object" do
+    conn = post("array", ~s([{"id": "a"}, {"id": "b"}]))
+    assert conn.status == 204
+    assert_received {:enqueued, [%{"id" => "a"}, %{"id" => "b"}], "batch-2"}
+
+    assert post("array", ~s({"id": "a"})).status == 400
+    assert post("array", "[nope").status == 400
+    refute_received {:enqueued, _, _}
   end
 
   test "a body read that raises Bandit's request_timeout error is 408 and still emits telemetry" do
@@ -180,6 +194,44 @@ defmodule AshOperations.WebhookTest do
       refute Signature.valid_hex?(sig, ["a"], "m")
     end
 
+    test "valid_ecdsa_sha256? accepts a P-256 signature under a base64 DER or PEM key" do
+      {key, spki} = ec_key()
+      message = ["1700000000", ~s([{"a":1}])]
+      signature = ecdsa_sign(key, message)
+
+      assert Signature.valid_ecdsa_sha256?(signature, [Base.encode64(spki)], message)
+      assert Signature.valid_ecdsa_sha256?(signature, [pem(spki)], message)
+      assert Signature.valid_ecdsa_sha256?(signature, ["not a key", Base.encode64(spki)], message)
+    end
+
+    test "valid_ecdsa_sha256? refuses a wrong key, other bytes, a malformed signature and no keys" do
+      {key, spki} = ec_key()
+      {_other, other_spki} = ec_key()
+      message = "1700000000[]"
+      signature = ecdsa_sign(key, message)
+
+      refute Signature.valid_ecdsa_sha256?(signature, [Base.encode64(other_spki)], message)
+      refute Signature.valid_ecdsa_sha256?(signature, [Base.encode64(spki)], "1700000001[]")
+      refute Signature.valid_ecdsa_sha256?("not base64!", [Base.encode64(spki)], message)
+      refute Signature.valid_ecdsa_sha256?(Base.encode64("junk"), [Base.encode64(spki)], message)
+      refute Signature.valid_ecdsa_sha256?(signature, [], message)
+      refute Signature.valid_ecdsa_sha256?(signature, ["", "%%%", pem("junk")], message)
+      refute Signature.valid_ecdsa_sha256?(nil, [Base.encode64(spki)], message)
+    end
+
+    test "valid_ecdsa_sha256? refuses a key that is not an EC key" do
+      rsa = :public_key.generate_key({:rsa, 2048, 65_537})
+      {:RSAPrivateKey, _, modulus, exponent, _, _, _, _, _, _, _} = rsa
+
+      {:SubjectPublicKeyInfo, spki, :not_encrypted} =
+        :public_key.pem_entry_encode(:SubjectPublicKeyInfo, {:RSAPublicKey, modulus, exponent})
+
+      message = "1700000000[]"
+      signature = message |> :public_key.sign(:sha256, rsa) |> Base.encode64()
+
+      refute Signature.valid_ecdsa_sha256?(signature, [Base.encode64(spki)], message)
+    end
+
     test "fresh?" do
       assert Signature.fresh?("1000", 1300, 300)
       assert Signature.fresh?("1000", 700, 300)
@@ -190,4 +242,19 @@ defmodule AshOperations.WebhookTest do
       refute Signature.fresh?("1234567890123", 1_234_567_890_123, 300)
     end
   end
+
+  defp ec_key do
+    key = :public_key.generate_key({:namedCurve, :secp256r1})
+    {:ECPrivateKey, _, _, params, point, _} = key
+
+    {:SubjectPublicKeyInfo, spki, :not_encrypted} =
+      :public_key.pem_entry_encode(:SubjectPublicKeyInfo, {{:ECPoint, point}, params})
+
+    {key, spki}
+  end
+
+  defp ecdsa_sign(key, message),
+    do: message |> IO.iodata_to_binary() |> :public_key.sign(:sha256, key) |> Base.encode64()
+
+  defp pem(der), do: :public_key.pem_encode([{:SubjectPublicKeyInfo, der, :not_encrypted}])
 end

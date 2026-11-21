@@ -13,12 +13,16 @@ defmodule AshOperations.Webhook.Ingress do
   | Status | When |
   |---|---|
   | 204 | enqueued, duplicate or ignored |
-  | 400 | bad JSON, non-object, no dedup key, rejected payload |
+  | 400 | bad JSON, the wrong top-level shape, no dedup key, rejected payload |
   | 401 | bad or stale signature |
   | 404 | unknown provider |
   | 408 | body read timed out |
   | 413 | over the provider's cap |
   | 503 | no secret configured, insert failed, or the provider raised |
+
+  The top-level JSON value must be an object, unless the provider declares
+  `payload_shape/0` as `:array` (a provider that posts a batch of events as one
+  JSON array); then it must be an array, and an object is 400.
 
   The body is read here, not by `Plug.Parsers`, so the signature covers the
   exact bytes. Nothing is logged. One telemetry event per request carries the
@@ -119,7 +123,7 @@ defmodule AshOperations.Webhook.Ingress do
 
   defp process(conn, mod, raw) do
     with :ok <- verify(mod, conn, raw),
-         {:ok, payload} <- decode(raw),
+         {:ok, payload} <- decode(raw, shape(mod)),
          {:ok, key} <- dedup(mod, conn, payload) do
       case mod.enqueue(payload, key) do
         {:ok, outcome} when outcome in [:enqueued, :duplicate, :ignored] -> {204, outcome}
@@ -137,9 +141,14 @@ defmodule AshOperations.Webhook.Ingress do
     end
   end
 
-  defp decode(raw) do
-    case Jason.decode(raw, floats: :decimals) do
-      {:ok, %{} = payload} -> {:ok, payload}
+  defp shape(mod) do
+    if function_exported?(mod, :payload_shape, 0), do: mod.payload_shape(), else: :object
+  end
+
+  defp decode(raw, shape) do
+    case {shape, Jason.decode(raw, floats: :decimals)} do
+      {:object, {:ok, %{} = payload}} -> {:ok, payload}
+      {:array, {:ok, payload}} when is_list(payload) -> {:ok, payload}
       _ -> {400, :bad_json}
     end
   end

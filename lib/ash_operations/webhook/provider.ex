@@ -13,11 +13,14 @@ defmodule AshOperations.Webhook.Provider do
     * `dedup_key/2` returns the provider's redelivery-stable key.
     * `enqueue/2` must be idempotent per `dedup_key` and must store only ids.
     * `max_body_bytes/0` (optional) caps the body; the ingress default is 64 KiB.
+    * `payload_shape/0` (optional) is `:object` (the default) or `:array`, for a
+      provider that posts a batch of events as one top-level JSON array. The
+      payload `dedup_key/2` and `enqueue/2` receive is then a list.
 
   Nothing in this contract logs.
   """
 
-  @type payload :: map()
+  @type payload :: map() | list()
 
   @callback verify(Plug.Conn.t(), raw_body :: binary()) ::
               :ok | {:error, :unauthorized | :not_configured}
@@ -29,5 +32,7 @@ defmodule AshOperations.Webhook.Provider do
 
   @callback max_body_bytes() :: pos_integer()
 
-  @optional_callbacks max_body_bytes: 0
+  @callback payload_shape() :: :object | :array
+
+  @optional_callbacks max_body_bytes: 0, payload_shape: 0
 end
