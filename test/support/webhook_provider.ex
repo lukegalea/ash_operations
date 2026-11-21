@@ -53,3 +53,19 @@ defmodule AshOperations.Test.DefaultCapProvider do
   @impl true
   def enqueue(_payload, _key), do: {:ok, :enqueued}
 end
+
+defmodule AshOperations.Test.ArrayProvider do
+  @moduledoc false
+  @behaviour AshOperations.Webhook.Provider
+  @impl true
+  def payload_shape, do: :array
+  @impl true
+  def verify(_conn, _raw), do: :ok
+  @impl true
+  def dedup_key(_conn, payload) when is_list(payload), do: {:ok, "batch-#{length(payload)}"}
+  @impl true
+  def enqueue(payload, key) do
+    send(self(), {:enqueued, payload, key})
+    {:ok, :enqueued}
+  end
+end

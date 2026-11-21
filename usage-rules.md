@@ -54,6 +54,12 @@ declaring anything.
 
 - A webhook is a nudge. Implement `AshOperations.Webhook.Provider`: verify the exact signed bytes,
   return a redelivery-stable dedup key, enqueue ids only. Never act on payload values.
+- A provider that posts a batch of events as one JSON array declares `payload_shape/0` as `:array`;
+  its `dedup_key/2` and `enqueue/2` then receive the list. Dedup each event on its own id as well,
+  since a batch can be redelivered with other events in it.
+- Verify with `AshOperations.Webhook.Signature`: `valid_hex?/3` for an HMAC-SHA256 under a shared
+  secret, `valid_ecdsa_sha256?/3` for an ECDSA signature under the provider's public key, and
+  `fresh?/3` for the timestamp. Read secrets and keys from the environment on every request.
 
 ## Operator surfaces
 

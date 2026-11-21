@@ -13,6 +13,12 @@
 
 ### Added
 
+- `AshOperations.Webhook.Provider`: an optional `payload_shape/0` (`:object`, the default, or
+  `:array`), for a provider that posts a batch of events as one top-level JSON array. The ingress
+  answers 400 when the top-level value has the other shape.
+- `AshOperations.Webhook.Signature.valid_ecdsa_sha256?/3`: verifies a base64 DER ECDSA signature
+  over SHA-256 against any one of several public keys (base64 DER SubjectPublicKeyInfo or PEM),
+  for providers that sign webhooks with a key pair rather than a shared secret.
 - The transport sees the call: `meta.call` holds the action's `actor`, `tenant` and the values of
   its `in: :context` params. A new param location, `in: :context`, is an action argument that is
   never put on the wire.
