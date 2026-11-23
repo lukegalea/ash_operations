@@ -3,6 +3,7 @@ spark_locals_without_parens = [
   documented_at: 1,
   effect: 1,
   idempotent?: 1,
+  max_attempts: 1,
   operation: 3,
   param: 2,
   param: 3,

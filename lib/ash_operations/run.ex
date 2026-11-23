@@ -76,6 +76,7 @@ defmodule AshOperations.Run do
       effect: operation.effect,
       idempotent?: operation.idempotent?,
       timeout: operation.timeout,
+      max_attempts: operation.max_attempts,
       response: operation.response,
       telemetry_prefix: Info.telemetry_prefix(resource)
     }

@@ -131,6 +131,14 @@ defmodule AshOperations do
         default: 15_000,
         doc: "Receive timeout in milliseconds for one attempt."
       ],
+      max_attempts: [
+        type: :pos_integer,
+        doc: """
+        Attempts for this operation, the first included, in place of the transport's
+        `max_attempts`. `1` sends once and never waits, for a caller that cannot hold
+        what it holds across retries (a row lock, a request a person is waiting on).
+        """
+      ],
       idempotent?: [
         type: :boolean,
         doc: """

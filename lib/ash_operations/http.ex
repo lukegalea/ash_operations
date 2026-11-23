@@ -27,7 +27,8 @@ defmodule AshOperations.Http do
       with reason `:bad_request` and its `status`;
     * `:req_options` — merged last; tests pass `plug: {Req.Test, Module}`;
     * `:max_attempts` (3), `:max_delay_ms` (10_000), `:base_backoff_ms` (500),
-      `:sleep` (a 1-arity fun; default `Process.sleep/1`).
+      `:sleep` (a 1-arity fun; default `Process.sleep/1`). An operation's own
+      `max_attempts` takes the place of the transport's.
 
   ## Per-call configuration
 
@@ -256,7 +257,7 @@ defmodule AshOperations.Http do
     opts = [
       idempotent?: ctx.meta.idempotent?,
       retry_after_ms: retry_after,
-      max_attempts: Map.get(ctx.config, :max_attempts, 3),
+      max_attempts: Map.get(ctx.meta, :max_attempts) || Map.get(ctx.config, :max_attempts, 3),
       max_delay_ms: Map.get(ctx.config, :max_delay_ms, 10_000),
       base_backoff_ms: Map.get(ctx.config, :base_backoff_ms, 500)
     ]
