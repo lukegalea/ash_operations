@@ -31,6 +31,7 @@ defmodule AshOperations.Transport do
           required(:effect) => :read | :write,
           required(:idempotent?) => boolean(),
           required(:timeout) => pos_integer(),
+          optional(:max_attempts) => pos_integer() | nil,
           required(:response) => :json | :binary | :none,
           required(:telemetry_prefix) => [atom()],
           optional(:call) => call()

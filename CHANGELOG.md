@@ -13,6 +13,8 @@
 
 ### Added
 
+- `operation`: a `max_attempts` option that takes the place of the transport's for that operation.
+  `max_attempts 1` sends once and never waits, for a caller holding a lock or a person's request.
 - `AshOperations.Webhook.Provider`: an optional `payload_shape/0` (`:object`, the default, or
   `:array`), for a provider that posts a batch of events as one top-level JSON array. The ingress
   answers 400 when the top-level value has the other shape.

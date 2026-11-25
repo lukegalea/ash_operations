@@ -23,6 +23,7 @@ defmodule AshOperations.Test.Widgets do
 
     operation :get_widget_content, :get, "/widgets/{widget_id}/content" do
       response :binary
+      max_attempts(1)
       param :widget_id, :string, in: :path
     end
 

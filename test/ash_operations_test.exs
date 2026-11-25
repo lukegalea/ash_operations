@@ -230,6 +230,26 @@ defmodule AshOperationsTest do
       assert calls(counter) == 2
     end
 
+    test "an operation's max_attempts replaces the transport's: 1 sends once and never waits" do
+      counter =
+        counting_stub(fn conn, _ ->
+          conn
+          |> Plug.Conn.put_resp_header("retry-after", "1")
+          |> json(429, ~s({"code":"RATE_LIMIT_EXCEEDED"}))
+        end)
+
+      assert {:error, error} = Widgets.get_widget_content(%{widget_id: "w1"}, authorize?: false)
+      assert Error.reason(error) == :rate_limited
+      assert calls(counter) == 1
+      refute_received {:slept, _}
+
+      counter = counting_stub(fn conn, _ -> json(conn, 503, ~s({"code":"UNAVAILABLE"})) end)
+
+      assert {:error, error} = Widgets.get_widget_content(%{widget_id: "w1"}, authorize?: false)
+      assert Error.reason(error) == :server_error
+      assert calls(counter) == 1
+    end
+
     test "an idempotent timeout is retried, then reported as :timeout" do
       counter = counting_stub(fn conn, _ -> Req.Test.transport_error(conn, :timeout) end)
 
