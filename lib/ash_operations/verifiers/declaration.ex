@@ -7,7 +7,8 @@ defmodule AshOperations.Verifiers.Declaration do
       transport owns the credential.
     * Every `{placeholder}` has an `in: :path` param, and vice versa.
     * `in: :body` params only on `request :json`; `in: :part` only on
-      `request :multipart`; neither on a `get`.
+      `request :multipart`; neither on a `get`. `explode: false` only on
+      `in: :query`.
     * **Ambiguity is decided up front.** A non-idempotent operation names its
       `reconcile_with` read — an existing, idempotent `:read` operation — or says
       `reconcile_with :none`.
@@ -111,7 +112,13 @@ defmodule AshOperations.Verifiers.Declaration do
         do: [{op.name, "a get operation sends no body; drop `request #{inspect(op.request)}`."}],
         else: []
 
-    body ++ parts ++ get_body
+    explode =
+      for %Param{explode: false, in: location} = p <- op.params, location != :query do
+        {op.name,
+         "param #{inspect(p.name)} sets `explode: false`, which only applies to `in: :query`."}
+      end
+
+    body ++ parts ++ get_body ++ explode
   end
 
   defp reconcile(%Operation{idempotent?: true, reconcile_with: nil}, _by_name), do: []

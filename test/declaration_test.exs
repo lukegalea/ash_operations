@@ -165,6 +165,25 @@ defmodule AshOperations.DeclarationTest do
     |> assert_refused("needs `request :json`")
   end
 
+  test "explode: false only applies to a query param" do
+    compile("", """
+    operation :create, :post, "/x" do
+      #{@documented}
+      reconcile_with :none
+      param :ids, {:array, :string}, in: :body, explode: false
+    end
+    """)
+    |> assert_refused("only applies to `in: :query`")
+
+    assert [] =
+             compile("", """
+             operation :list, :get, "/x" do
+               #{@documented}
+               param :ids, {:array, :string}, explode: false
+             end
+             """)
+  end
+
   test "without a spec every operation cites its documentation" do
     compile("", """
     operation :list, :get, "/x" do

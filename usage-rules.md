@@ -14,6 +14,9 @@ declaring anything.
 - `in: :body` params need `request :json`; `in: :part` params need `request :multipart`; a `get`
   sends no body.
 - Declare `param :x, :type, as: "providerName"` when the wire name differs from the argument name.
+- A list-valued query param repeats its key (`?ids=a&ids=b`). When the provider's spec says
+  `style: form, explode: false`, declare `param :ids, {:array, :string}, explode: false` to send
+  one comma-joined value (`?ids=a,b`).
 - An `in: :context` param never goes on the wire: the transport reads it from
   `meta.call.context_params` (to choose a per-call URL or credential).
 - Use `response :binary` for downloads and `response :none` when the body is not wanted.

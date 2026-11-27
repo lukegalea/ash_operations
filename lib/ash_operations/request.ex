@@ -54,10 +54,16 @@ defmodule AshOperations.Request do
 
   defp query(%Operation{params: params}, arguments) do
     for %Param{in: :query} = param <- params,
-        item <- present(arguments, param) do
-      {Param.wire_name(param), scalar(item)}
+        value <- query_values(param, present(arguments, param)) do
+      {Param.wire_name(param), value}
     end
   end
+
+  # `explode: false` (OpenAPI `style: form, explode: false`): a list is one value,
+  # its elements joined with commas, instead of one repeated key per element.
+  defp query_values(_param, []), do: []
+  defp query_values(%Param{explode: false}, items), do: [Enum.map_join(items, ",", &scalar/1)]
+  defp query_values(_param, items), do: Enum.map(items, &scalar/1)
 
   defp present(arguments, %Param{name: name}) do
     case Map.get(arguments, name) do

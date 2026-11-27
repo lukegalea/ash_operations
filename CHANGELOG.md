@@ -13,6 +13,10 @@
 
 ### Added
 
+- `param`: an `explode` option (default `true`, one repeated key per element: `?ids=a&ids=b`).
+  `explode: false` sends a list-valued query param as one value, its elements joined with commas
+  (`?ids=a,b`, OpenAPI `style: form, explode: false`). The compiler refuses it on a param that is
+  not `in: :query`.
 - `operation`: a `max_attempts` option that takes the place of the transport's for that operation.
   `max_attempts 1` sends once and never waits, for a caller holding a lock or a person's request.
 - `AshOperations.Webhook.Provider`: an optional `payload_shape/0` (`:object`, the default, or

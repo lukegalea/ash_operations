@@ -80,6 +80,18 @@ defmodule AshOperations do
         credential, say).
         """
       ],
+      explode: [
+        type: :boolean,
+        default: true,
+        doc: """
+        For an `in: :query` param with a list value. `true` repeats the key once
+        per element (`?ids=a&ids=b`, OpenAPI `style: form, explode: true`).
+        `false` sends one value, the elements joined with commas (`?ids=a,b`,
+        `style: form, explode: false`); an element that itself holds a comma
+        cannot be told apart from the separator. `explode: false` on any other
+        location fails compilation.
+        """
+      ],
       allow_nil?: [type: :boolean, default: true, doc: "Whether the argument may be omitted."],
       default: [type: :any, doc: "Default argument value."],
       constraints: [type: :keyword_list, default: [], doc: "Ash type constraints."],

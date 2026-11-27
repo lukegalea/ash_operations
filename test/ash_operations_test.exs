@@ -9,7 +9,7 @@ defmodule AshOperationsTest do
 
   use ExUnit.Case, async: true
 
-  alias AshOperations.{Error, Info, Reconcile, Retry}
+  alias AshOperations.{Error, Info, Reconcile, Request, Retry}
   alias AshOperations.Test.{Transport, Widgets}
 
   @stub Transport
@@ -82,6 +82,32 @@ defmodule AshOperationsTest do
 
       assert widget["price"] == Decimal.new("1899.10")
       assert widget["qty"] == 980
+    end
+
+    test "a list query param repeats its key once per element by default" do
+      Req.Test.stub(@stub, fn conn ->
+        assert conn.query_string == "ids=a&ids=b"
+        json(conn, 200, ~s({"data":[]}))
+      end)
+
+      assert {:ok, %{"data" => []}} = Widgets.list_widgets(%{ids: ["a", "b"]}, authorize?: false)
+    end
+
+    test "explode: false sends a list query param as one comma-joined value" do
+      operation = Info.operation(Widgets, :list_widgets)
+
+      assert {:ok, %{query: [{"ids", "a"}, {"ids", "b"}, {"tags", "a,b"}]}} =
+               Request.build(operation, %{ids: ["a", "b"], tags: ["a", "b"]})
+
+      # The transport form-encodes every query value, so the comma goes out as %2C: the
+      # same bytes a caller joining the list into one string sends.
+      Req.Test.stub(@stub, fn conn ->
+        assert conn.query_string == "tags=a%2Cb"
+        assert conn.query_params == %{"tags" => "a,b"}
+        json(conn, 200, ~s({"data":[]}))
+      end)
+
+      assert {:ok, %{"data" => []}} = Widgets.list_widgets(%{tags: ["a", "b"]}, authorize?: false)
     end
 
     test "a path argument is exactly one encoded segment" do

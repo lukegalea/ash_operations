@@ -15,6 +15,8 @@ defmodule AshOperations.Test.Widgets do
     operation :list_widgets, :get, "/widgets" do
       param :name_contains, :string, as: "nameContains"
       param :page_size, :integer, as: "maxPageSize"
+      param :ids, {:array, :string}
+      param :tags, {:array, :string}, explode: false
     end
 
     operation :get_widget, :get, "/widgets/{widget_id}" do
